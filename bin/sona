@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+from sona.interface import parseCommandLine, start
+
+parser = parseCommandLine()
+start(parser)
