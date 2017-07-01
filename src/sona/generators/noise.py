@@ -2,12 +2,28 @@
 Colored Noise generators module.
 """
 import numpy
+from scipy.signal import gaussian
 
-from sona.params import BUFFERSIZE
+from sona.params import BUFFERSIZE, BITRATE
 from sona.generators.generator import SampleGenerator
 
-class NoiseGenerator(SampleGenerator):
+def coloredNoise(exponent, high_pass_zeroed_samples):
+    """
+    Build a colored noise generator with a spectrum 1/f**e
 
+    Args:
+        exponent (float): the exponent of the frequency.
+        high_pass_zeroed_samples (int): the number of samples to be zeroed in the high pass filter.
+
+    Returns:
+        An instance of ``NoiseGenerator``.
+    """
+    spectrum_filter = lambda x, f: x / f**exponent
+    return NoiseGenerator(spectrum_filter=spectrum_filter,
+                          high_pass_zeroed_samples=high_pass_zeroed_samples)
+
+class NoiseGenerator(SampleGenerator):
+    """ A noise generator """
     def __init__(self,
                  spectrum_filter=lambda x, f: x,
                  high_pass_zeroed_samples=128,
@@ -47,17 +63,62 @@ class NoiseGenerator(SampleGenerator):
         self._chunk = self.normalize(self._chunk).astype(numpy.float32)
         return self._chunk
 
-def coloredNoise(exponent, high_pass_zeroed_samples):
-    """
-    Build a colored noise generator with a spectrum 1/f**e
+class PulseGenerator(SampleGenerator):
+    """ A salt and pepper audio noise generator """
+    def __init__(self,
+                 bitrate=BITRATE,
+                 average_distance=1.0,
+                 standard_deviation=1.0,
+                 chunk_size=BUFFERSIZE,
+                 pulse_signal=gaussian(51, 7),
+                 amplitude=1.0):
+        """
+        A pulsed noise generator. It creates a train of delta function spaced accordingly to the
+        input parameters.
 
-    Args:
-        exponent (float): the exponent of the frequency.
-        high_pass_zeroed_samples (int): the number of samples to be zeroed in the high pass filter.
+        Args:
+            bitrate (int): the bitrate.
+            average_distance (float): the average distance in ms between different pulses.
+            standard_deviation (float): the width of the uniform distribution to modify randomly
+                the distance between pulses. A uniform distribution is used, with
+                b - a = sqrt(12) * standard_deviation
+            chunk_size (even int): the size of the chunks returned by the iterator.
+            pulse_signal (array): the shape of the pulse. 
+            amplitude (float): signal amplitude.
+        """
+        super(PulseGenerator, self).__init__(chunk_size=chunk_size,
+                                             amplitude=amplitude,
+                                             bitrate=bitrate)
+        self._average_integer_distance = int((average_distance * 1e-3) * bitrate)
+        self._random_range = int((standard_deviation * numpy.sqrt(12) * 1e-3) * bitrate)
+        # An absolute frame time
+        self._clock = 0
+        self._last_pulse_clock = 0
+        self._random_generator_state = numpy.random.RandomState()
+        self._pulse_length = pulse_signal.size
+        self._pulse_signal = pulse_signal
 
-    Returns:
-        An instance of ``NoiseGenerator``.
-    """
-    spectrum_filter = lambda x, f: x / f**exponent
-    return NoiseGenerator(spectrum_filter=spectrum_filter,
-                          high_pass_zeroed_samples=high_pass_zeroed_samples)
+    def next(self):
+        """
+        Generate the signal chunks.
+        """
+        depleted = False
+        while not depleted:
+            if self._random_range > 0.0:
+                random_component = self._random_generator_state.randint(-self._random_range,
+                                                                    self._random_range)
+                self._random_generator_state.seed()
+            else:
+                random_component = 0
+            pulse_clock = self._last_pulse_clock + self._average_integer_distance + random_component
+            if pulse_clock < 0:
+                pulse_clock = 0
+            if pulse_clock + self._pulse_length> self._clock + self._chunk_size:
+                depleted = True
+            else:
+                self._last_pulse_clock = self._clock + pulse_clock
+                self._chunk[pulse_clock-self._clock:pulse_clock-self._clock+self._pulse_length] = self._pulse_signal
+        self._clock += self._chunk_size + 1
+        print(numpy.sum(self._chunk==1.0))
+        print(self._clock)
+        return self._chunk

@@ -9,6 +9,7 @@ class SampleGenerator(object):
 
     def __init__(self,
                  chunk_size=BUFFERSIZE,
+                 bitrate=BITRATE,
                  amplitude=1.0):
         """
         Base class for sound generators.
@@ -16,9 +17,11 @@ class SampleGenerator(object):
         Args:
             chunk_size (int): the size of the chunk returned by next(). It has to be an even
                 number.
+            bitrate (int): the bit rate per second.
             amplitude (float): the amplitude to which the samples are to be renormalized.
         """
         self._amplitude = amplitude
+        self._bitrate = bitrate
         if chunk_size % 2 == 0:
             self._chunk_size = chunk_size
         else:

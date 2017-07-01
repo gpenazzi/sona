@@ -5,6 +5,7 @@ import pyaudio
 import argparse
 
 from sona.generators.noise import coloredNoise
+from sona.generators.noise import PulseGenerator
 from sona.params import BUFFERSIZE, BITRATE
 
 def play(generator):
@@ -38,8 +39,8 @@ def parseCommandLine():
     """
     parser = argparse.ArgumentParser()
     helpstring = """
-        The generator to be used. Up to now sona supports:
-            * colored_noise
+        The generator to be used. Up to now sona supports colored_noise and
+        pulse_noise
         """
     parser.add_argument("generator",
                         type=str,
@@ -60,6 +61,20 @@ def parseCommandLine():
                         type=int,
                         default=128,
                         help=helpstring)
+    helpstring = """
+        The distance between pulses for a pulsed noise in ms.
+        """
+    parser.add_argument("--distance",
+                        type=float,
+                        default=50.0,
+                        help=helpstring)
+    helpstring = """
+        The randomness in the distance between pulses for a pulsed noise (standard deviation in ms).
+        """
+    parser.add_argument("--randomness",
+                        type=float,
+                        default=20.0,
+                        help=helpstring)
     args = parser.parse_args()
     return parser
 
@@ -73,6 +88,9 @@ def start(parser):
     args = parser.parse_args()
     if args.generator == 'colored_noise':
         generator = coloredNoise(args.exponent, args.highpass)
+    elif args.generator == 'pulsed_noise':
+        generator = PulseGenerator(average_distance=args.distance,
+                                standard_deviation=args.randomness)
     else:
         raise ValueError("unknown generator")
 
