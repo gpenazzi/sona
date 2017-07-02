@@ -70,7 +70,7 @@ class PulseGenerator(SampleGenerator):
                  average_distance=1.0,
                  standard_deviation=1.0,
                  chunk_size=BUFFERSIZE,
-                 pulse_signal=gaussian(51, 7),
+                 pulse_signal=gaussian(361, 18),
                  amplitude=1.0):
         """
         A pulsed noise generator. It creates a train of delta function spaced accordingly to the
@@ -83,7 +83,7 @@ class PulseGenerator(SampleGenerator):
                 the distance between pulses. A uniform distribution is used, with
                 b - a = sqrt(12) * standard_deviation
             chunk_size (even int): the size of the chunks returned by the iterator.
-            pulse_signal (array): the shape of the pulse. 
+            pulse_signal (array): the shape of the pulse.
             amplitude (float): signal amplitude.
         """
         super(PulseGenerator, self).__init__(chunk_size=chunk_size,
@@ -102,23 +102,26 @@ class PulseGenerator(SampleGenerator):
         """
         Generate the signal chunks.
         """
+        self._reset()
         depleted = False
         while not depleted:
             if self._random_range > 0.0:
-                random_component = self._random_generator_state.randint(-self._random_range,
-                                                                    self._random_range)
+                random_component = self._random_generator_state.randint(
+                    -self._random_range, self._random_range)
                 self._random_generator_state.seed()
             else:
                 random_component = 0
             pulse_clock = self._last_pulse_clock + self._average_integer_distance + random_component
-            if pulse_clock < 0:
-                pulse_clock = 0
+            if pulse_clock < self._clock:
+                pulse_clock = self._clock
             if pulse_clock + self._pulse_length> self._clock + self._chunk_size:
                 depleted = True
             else:
-                self._last_pulse_clock = self._clock + pulse_clock
-                self._chunk[pulse_clock-self._clock:pulse_clock-self._clock+self._pulse_length] = self._pulse_signal
+                self._last_pulse_clock = pulse_clock
+                start = pulse_clock-self._clock
+                self._chunk[start:start+self._pulse_length] = self._pulse_signal
         self._clock += self._chunk_size + 1
+
         print(numpy.sum(self._chunk==1.0))
         print(self._clock)
         return self._chunk
