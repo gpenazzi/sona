@@ -29,7 +29,7 @@ class SampleGenerator(object):
         self._chunk = numpy.zeros(self._chunk_size, dtype=numpy.float32)
 
     def _reset(self):
-        self._chunk = numpy.zeros(BUFFERSIZE, dtype=numpy.float32)
+        self._chunk[:] = 0.0
 
     def __iter__(self):
         return self
