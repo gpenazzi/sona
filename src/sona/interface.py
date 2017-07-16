@@ -4,13 +4,13 @@ pyAudio-sona interface and command line user interface.
 import pyaudio
 import argparse
 
-from sona.generators.noise import coloredNoise
+from sona.generators.noise import ColoredNoise
 from sona.generators.noise import PulseGenerator
 from sona.params import BUFFERSIZE, BITRATE
 
 def play(generator):
     """
-    Play indefenitely the given generator.
+    Play indefinitely the given generator.
 
     Args:
         generator (derived class of ``SampleGenerator``): the generator to be played.
@@ -87,7 +87,7 @@ def start(parser):
     """
     args = parser.parse_args()
     if args.generator == 'colored_noise':
-        generator = coloredNoise(args.exponent, args.highpass)
+        generator = ColoredNoise(args.exponent, args.highpass)
     elif args.generator == 'pulsed_noise':
         generator = PulseGenerator(average_distance=args.distance,
                                 standard_deviation=args.randomness)

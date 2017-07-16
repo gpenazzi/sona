@@ -7,21 +7,6 @@ from scipy.signal import gaussian
 from sona.params import BUFFERSIZE, BITRATE
 from sona.generators.generator import SampleGenerator
 
-def coloredNoise(exponent, high_pass_zeroed_samples):
-    """
-    Build a colored noise generator with a spectrum 1/f**e
-
-    Args:
-        exponent (float): the exponent of the frequency.
-        high_pass_zeroed_samples (int): the number of samples to be zeroed in the high pass filter.
-
-    Returns:
-        An instance of ``NoiseGenerator``.
-    """
-    spectrum_filter = lambda x, f: x / f**exponent
-    return NoiseGenerator(spectrum_filter=spectrum_filter,
-                          high_pass_zeroed_samples=high_pass_zeroed_samples)
-
 class NoiseGenerator(SampleGenerator):
     """ A noise generator """
     def __init__(self,
@@ -62,6 +47,24 @@ class NoiseGenerator(SampleGenerator):
         self._chunk = numpy.fft.irfft(self._spectrum_filter(spectrum, frequency))
         self._chunk = self.normalize(self._chunk).astype(numpy.float32)
         return self._chunk
+
+class ColoredNoise(NoiseGenerator):
+    """ A colored noise with a spectrum 1/f**e """
+    def __init__(self, exponent, high_pass_zeroed_samples):
+        """
+        Build a colored noise generator with a spectrum 1/f**e
+
+        Args:
+            exponent (float): the exponent of the frequency.
+            high_pass_zeroed_samples (int): the number of samples to be zeroed in the high pass filter.
+
+        Returns:
+            An instance of ``NoiseGenerator``.
+        """
+        spectrum_filter = lambda x, f: x / f**exponent
+        super(ColoredNoise, self).__init__(
+            spectrum_filter=spectrum_filter,
+            high_pass_zeroed_samples=high_pass_zeroed_samples)
 
 class PulseGenerator(SampleGenerator):
     """ A salt and pepper audio noise generator """
