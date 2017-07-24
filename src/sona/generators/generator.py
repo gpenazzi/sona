@@ -42,3 +42,6 @@ class SampleGenerator(object):
 
     def next(self):
         raise NotImplementedError("next() is a virtual method")
+
+    def chunkSize(self):
+        return self._chunk_size

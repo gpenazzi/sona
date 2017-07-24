@@ -16,9 +16,9 @@ class Product(SampleGenerator):
             first (a SampleGenerator): generator providing first chunk.
             second (a SampleGenerator): generator providing second chunk.
         """
-        if first._chunk_size != second._chunk_size:
+        if first.chunkSize() != second.chunkSize():
             raise ValueError("Generator in product must have the same chunk size.")
-        super(Product, self).__init__(chunk_size=first._chunk_size, amplitude=amplitude)
+        super(Product, self).__init__(chunk_size=first.chunkSize(), amplitude=amplitude)
         self._first = first
         self._second = second
 
