@@ -36,8 +36,8 @@ class NoiseGenerator(SampleGenerator):
         """
         Generate the signal chunks.
         """
-        spectrum = numpy.random.randn(self._chunk_size / 2) + \
-                   1j * numpy.random.randn(self._chunk_size / 2)
+        spectrum = numpy.random.randn((self._chunk_size + 2) / 2) + \
+                   1j * numpy.random.randn((self._chunk_size + 2) / 2)
         # A punk high-pass Filter
         spectrum[:self._high_pass_zeroed_samples] = 0
         frequency = numpy.arange(len(spectrum), dtype=numpy.float32)
@@ -45,18 +45,21 @@ class NoiseGenerator(SampleGenerator):
         frequency[0] += 0.01
 
         self._chunk = numpy.fft.irfft(self._spectrum_filter(spectrum, frequency))
-        self._chunk = self.normalize(self._chunk).astype(numpy.float32)
+        print(self._chunk.size, self._chunk_size)
+        self.normalize()
         return self._chunk
 
 class ColoredNoise(NoiseGenerator):
-    """ A colored noise with a spectrum 1/f**e """
-    def __init__(self, exponent, high_pass_zeroed_samples):
+    """A colored noise with a spectrum 1/f**e."""
+    def __init__(self, exponent, high_pass_zeroed_samples, chunk_size=BUFFERSIZE):
         """
         Build a colored noise generator with a spectrum 1/f**e
 
         Args:
             exponent (float): the exponent of the frequency.
-            high_pass_zeroed_samples (int): the number of samples to be zeroed in the high pass filter.
+            high_pass_zeroed_samples (int): the number of samples to be zeroed in the high pass
+                filter.
+            chunk_size (even int): the size of the chunks returned by the iterator.
 
         Returns:
             An instance of ``NoiseGenerator``.
@@ -64,14 +67,15 @@ class ColoredNoise(NoiseGenerator):
         spectrum_filter = lambda x, f: x / f**exponent
         super(ColoredNoise, self).__init__(
             spectrum_filter=spectrum_filter,
-            high_pass_zeroed_samples=high_pass_zeroed_samples)
+            high_pass_zeroed_samples=high_pass_zeroed_samples,
+            chunk_size=chunk_size)
 
 class PulseGenerator(SampleGenerator):
     """ A salt and pepper audio noise generator """
     def __init__(self,
                  bitrate=BITRATE,
-                 average_distance=1.0,
-                 standard_deviation=1.0,
+                 distance=1.0,
+                 randomness=1.0,
                  chunk_size=BUFFERSIZE,
                  pulse_signal=gaussian(361, 18),
                  amplitude=1.0):
@@ -81,8 +85,8 @@ class PulseGenerator(SampleGenerator):
 
         Args:
             bitrate (int): the bitrate.
-            average_distance (float): the average distance in ms between different pulses.
-            standard_deviation (float): the width of the uniform distribution to modify randomly
+            distance (float): the average distance in ms between different pulses.
+            randomness (float): the width of the uniform distribution to modify randomly
                 the distance between pulses. A uniform distribution is used, with
                 b - a = sqrt(12) * standard_deviation
             chunk_size (even int): the size of the chunks returned by the iterator.
@@ -92,8 +96,8 @@ class PulseGenerator(SampleGenerator):
         super(PulseGenerator, self).__init__(chunk_size=chunk_size,
                                              amplitude=amplitude,
                                              bitrate=bitrate)
-        self._average_integer_distance = int((average_distance * 1e-3) * bitrate)
-        self._random_range = int((standard_deviation * numpy.sqrt(12) * 1e-3) * bitrate)
+        self._average_integer_distance = int((distance * 1e-3) * bitrate)
+        self._random_range = int((randomness * numpy.sqrt(12) * 1e-3) * bitrate)
         # An absolute frame time
         self._clock = 0
         self._last_pulse_clock = 0
@@ -125,6 +129,5 @@ class PulseGenerator(SampleGenerator):
                 self._chunk[start:start+self._pulse_length] = self._pulse_signal
         self._clock += self._chunk_size + 1
 
-        print(numpy.sum(self._chunk==1.0))
-        print(self._clock)
+        self.normalize()
         return self._chunk

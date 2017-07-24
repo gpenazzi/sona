@@ -37,9 +37,8 @@ class SampleGenerator(object):
     def __len__(self):
         return 1
 
-    @staticmethod
-    def normalize(chunk):
-        return chunk / max(chunk)
+    def normalize(self):
+        self._chunk = (self._amplitude * (self._chunk / max(self._chunk))).astype(numpy.float32)
 
     def next(self):
         raise NotImplementedError("next() is a virtual method")
