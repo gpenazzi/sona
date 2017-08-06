@@ -7,6 +7,7 @@ from scipy.signal import gaussian
 from sona.params import BUFFERSIZE, BITRATE
 from sona.generators.generator import SampleGenerator
 
+
 class NoiseGenerator(SampleGenerator):
     """ A noise generator """
     def __init__(self,
@@ -37,7 +38,7 @@ class NoiseGenerator(SampleGenerator):
         Generate the signal chunks.
         """
         spectrum = numpy.random.randn((self._chunk_size + 2) / 2) + \
-                   1j * numpy.random.randn((self._chunk_size + 2) / 2)
+            1j * numpy.random.randn((self._chunk_size + 2) / 2)
         # A punk high-pass Filter
         spectrum[:self._high_pass_zeroed_samples] = 0
         frequency = numpy.arange(len(spectrum), dtype=numpy.float32)
@@ -48,6 +49,7 @@ class NoiseGenerator(SampleGenerator):
         print(self._chunk.size, self._chunk_size)
         self.normalize()
         return self._chunk
+
 
 class ColoredNoise(NoiseGenerator):
     """A colored noise with a spectrum 1/f**e."""
@@ -64,18 +66,18 @@ class ColoredNoise(NoiseGenerator):
         Returns:
             An instance of ``NoiseGenerator``.
         """
-        spectrum_filter = lambda x, f: x / f**exponent
         super(ColoredNoise, self).__init__(
-            spectrum_filter=spectrum_filter,
+            spectrum_filter=lambda x, f: x / f**exponent,
             high_pass_zeroed_samples=high_pass_zeroed_samples,
             chunk_size=chunk_size)
 
+
 class PulseGenerator(SampleGenerator):
-    """ A salt and pepper audio noise generator """
+    """ A pulsed audio noise generator """
     def __init__(self,
                  bitrate=BITRATE,
-                 distance=1.0,
-                 randomness=1.0,
+                 distance=100.0,
+                 randomness=5.0,
                  chunk_size=BUFFERSIZE,
                  pulse_signal=gaussian(361, 18),
                  amplitude=1.0):
@@ -121,7 +123,7 @@ class PulseGenerator(SampleGenerator):
             pulse_clock = self._last_pulse_clock + self._average_integer_distance + random_component
             if pulse_clock < self._clock:
                 pulse_clock = self._clock
-            if pulse_clock + self._pulse_length> self._clock + self._chunk_size:
+            if pulse_clock + self._pulse_length > self._clock + self._chunk_size:
                 depleted = True
             else:
                 self._last_pulse_clock = pulse_clock

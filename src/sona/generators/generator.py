@@ -38,7 +38,8 @@ class SampleGenerator(object):
         return 1
 
     def normalize(self):
-        self._chunk = (self._amplitude * (self._chunk / max(self._chunk))).astype(numpy.float32)
+        self._chunk = (self._amplitude *
+            (self._chunk / max(numpy.abs(self._chunk)))).astype(numpy.float32)
 
     def next(self):
         raise NotImplementedError("next() is a virtual method")

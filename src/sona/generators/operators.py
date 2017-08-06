@@ -5,6 +5,7 @@ import numpy
 
 from sona.generators.generator import SampleGenerator
 
+
 class Product(SampleGenerator):
     """ Element-wise product of two generators chunks. """
     def __init__(self, first, second, amplitude=1.0):
