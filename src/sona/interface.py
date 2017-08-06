@@ -1,19 +1,23 @@
 """
 pyAudio-sona interface and command line user interface.
 """
-import pyaudio
 import argparse
+import numpy
+import pyaudio
+import time
 
 from sona.generators.noise import ColoredNoise
 from sona.generators.noise import PulseGenerator
 from sona.params import BUFFERSIZE, BITRATE
+
 
 def play(generator):
     """
     Play indefinitely the given generator.
 
     Args:
-        generator (derived class of ``SampleGenerator``): the generator to be played.
+        generator (derived class of ``SampleGenerator``): the generator to be
+            played.
     """
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paFloat32,
@@ -29,6 +33,33 @@ def play(generator):
         stream.close()
         pa.terminate()
         print('Audio terminated correctly')
+
+
+def renderAndPlay(generator, duration):
+    """
+    Mainly for debug. It generates a rendering and play it as a single long
+    array.
+
+    Args:
+        generator (derived class of ``SampleGenerator``): the generator to be
+            played.
+        time (float): the duration of the rendering, in seconds.
+    """
+    start = time.time()
+    output = numpy.zero(dtype=numpy.float32)
+    stop = False
+    while not stop:
+        output = numpy.concatenate(output, generator.next())
+        if time.time() - start > duration:
+            stop = True
+
+    pa = pyaudio.PyAudio()
+    stream = pa.open(format=pyaudio.paFloat32,
+                     channels=1,
+                     rate=BITRATE,
+                     output=True)
+
+    stream.write(data.tostring())
 
 def parseCommandLine():
     """
