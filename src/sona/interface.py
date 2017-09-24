@@ -119,9 +119,10 @@ def start(parser):
     args = parser.parse_args()
     if args.generator == 'colored_noise':
         generator = ColoredNoise(args.exponent, args.highpass)
-    elif args.generator == 'pulsed_noise':
-        generator = PulseGenerator(average_distance=args.distance,
-                                standard_deviation=args.randomness)
+    elif args.generator == 'pulse_noise':
+        generator = PulseGenerator(
+            distance=args.distance,
+            randomness=args.randomness)
     else:
         raise ValueError("unknown generator")
 
