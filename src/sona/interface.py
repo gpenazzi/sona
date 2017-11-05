@@ -4,11 +4,59 @@ pyAudio-sona interface and command line user interface.
 import argparse
 import numpy
 import pyaudio
+import threading
 import time
 
 from sona.generators.noise import ColoredNoise
 from sona.generators.noise import PulseGenerator
 from sona.params import BUFFERSIZE, BITRATE
+
+
+class Player():
+    """
+    A threaded player class.
+    """
+    def __init__(self):
+        """
+        The player constructor.
+        """
+        self.stop = False
+    
+    def __call__(self, generator):
+        """
+        The player call function.
+
+        Args:
+            generator (SampleGenerator): the generator to be played.
+        """
+        lock = threading.Lock()
+        thread = threading.Thread(target=self._play, args=(generator, lock))
+        thread.start()
+
+    def _play(self, generator, lock):
+        """
+        The meaty play function.
+
+        Args:
+           generator (SampleGenerator): the generator to be played.
+           lock (threading.Lock): a thread lock. 
+        """
+        with lock:
+            pa = pyaudio.PyAudio()
+            stream = pa.open(format=pyaudio.paFloat32,
+                                   channels=1,
+                                   rate=BITRATE,
+                                   output=True)
+            try:
+                while not self.stop:
+                    for data in generator:
+                        stream.write(data.tostring())
+                print('Audio terminated correctly')
+            except KeyboardInterrupt:
+                stream.stop_stream()
+                stream.close()
+                pa.terminate()
+                print('Audio terminated correctly')
 
 
 def play(generator):
@@ -33,7 +81,6 @@ def play(generator):
         stream.close()
         pa.terminate()
         print('Audio terminated correctly')
-
 
 def renderAndPlay(generator, duration):
     """

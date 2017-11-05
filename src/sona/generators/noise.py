@@ -46,7 +46,6 @@ class NoiseGenerator(SampleGenerator):
         frequency[0] += 0.01
 
         self._chunk = numpy.fft.irfft(self._spectrum_filter(spectrum, frequency))
-        print(self._chunk.size, self._chunk_size)
         self.normalize()
         return self._chunk
 
