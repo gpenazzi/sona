@@ -2,8 +2,11 @@
 pyAudio-sona interface and command line user interface.
 """
 import argparse
+import contextlib
 import numpy
+import os
 import pyaudio
+import sys
 import threading
 import time
 
@@ -11,6 +14,24 @@ from sona.generators.noise import ColoredNoise
 from sona.generators.noise import PulseGenerator
 from sona.params import BUFFERSIZE, BITRATE
 
+@contextlib.contextmanager
+def ignore_stderr():
+    """
+    A context manager to ignore stderr. We use it to avoid PyAudio 
+    pulluting the console output.
+    Credits to:
+    https://stackoverflow.com/questions/36956083/how-can-the-terminal-output-of-executables-run-by-python-functions-be-silenced-i/36966379#36966379
+    """
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    old_stderr = os.dup(2)
+    sys.stderr.flush()
+    os.dup2(devnull, 2)
+    os.close(devnull)
+    try:
+        yield
+    finally:
+        os.dup2(old_stderr, 2)
+        os.close(old_stderr)
 
 class Player():
     """
@@ -20,7 +41,7 @@ class Player():
         """
         The player constructor.
         """
-        self.stop = False
+        self._stop = False
     
     def __call__(self, generator):
         """
@@ -30,8 +51,9 @@ class Player():
             generator (SampleGenerator): the generator to be played.
         """
         lock = threading.Lock()
-        thread = threading.Thread(target=self._play, args=(generator, lock))
-        thread.start()
+        self.thread = threading.Thread(target=self._play, args=(generator, lock))
+        with ignore_stderr():
+            self.thread.start()
 
     def _play(self, generator, lock):
         """
@@ -47,16 +69,22 @@ class Player():
                                    channels=1,
                                    rate=BITRATE,
                                    output=True)
-            try:
-                while not self.stop:
-                    for data in generator:
-                        stream.write(data.tostring())
-                print('Audio terminated correctly')
-            except KeyboardInterrupt:
-                stream.stop_stream()
-                stream.close()
-                pa.terminate()
-                print('Audio terminated correctly')
+            
+            for data in generator:
+                while not self._stop:
+                    stream.write(data.tostring())
+                break
+            # Close the stream and terminate pyAudio.
+            stream.stop_stream()
+            stream.close()
+            pa.terminate()
+            print('Audio terminated correctly')
+
+    def stop(self):
+        """
+        Stop the playback.
+        """
+        self._stop = True
 
 
 def play(generator):
