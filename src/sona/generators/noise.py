@@ -119,8 +119,9 @@ class PulseGenerator(SampleGenerator):
         self._clock = 0
         self._last_pulse_clock = 0
         self._random_generator_state = numpy.random.RandomState()
-    
+        self._bitrate = bitrate
         self.pulse_signal = pulse_signal
+
 
     @property
     def distance(self):
@@ -129,7 +130,7 @@ class PulseGenerator(SampleGenerator):
     @distance.setter
     def distance(self, value):
         self._distance = value
-        self._average_integer_distance = int((self._distance * 1e-3) * bitrate)
+        self._average_integer_distance = int((self._distance * 1e-3) * self._bitrate)
 
     @property
     def randomness(self):
@@ -138,7 +139,7 @@ class PulseGenerator(SampleGenerator):
     @randomness.setter
     def randomness(self, value):
         self._randomness = value
-        self._random_range = int((self._randomness * numpy.sqrt(12) * 1e-3) * bitrate)
+        self._random_range = int((self._randomness * numpy.sqrt(12) * 1e-3) * self._bitrate)
 
     def next(self):
         """

@@ -9,8 +9,8 @@ def coloredGatedNoise(
         colored_noise_exponent=2.0,
         colored_noise_high_pass=128,
         pulse_noise_distance=50.0,
-        pulse_noise_randomness=20.0,
-        pulse_noise_signal=signal.gaussian(361, 18)):
+        pulse_noise_randomness=0.0,
+        pulse_noise_signal=signal.gaussian(3610, 180)):
     """
     Gate a colored noise with a pulsed gaussian.
     """

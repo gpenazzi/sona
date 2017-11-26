@@ -38,6 +38,9 @@ class SampleGenerator(object):
         return 1
 
     def normalize(self):
+        # Restore minimum to zero, if it is not.
+        self._chunk = self._chunk - min(self._chunk)
+        # Normalize to [0,1]
         self._chunk = (self._amplitude *
             (self._chunk / max(numpy.abs(self._chunk)))).astype(numpy.float32)
 

@@ -71,15 +71,17 @@ class Player():
                                    output=True)
             
             for data in generator:
-                print generator.exponent
-                while not self._stop:
+                if not self._stop:
                     stream.write(data.tostring())
-                break
+                else:
+                    break
             # Close the stream and terminate pyAudio.
             stream.stop_stream()
             stream.close()
             pa.terminate()
             print('Audio terminated correctly')
+            # Allow re-play.
+            self._stop = False
 
     def stop(self):
         """
