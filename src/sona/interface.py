@@ -71,6 +71,7 @@ class Player():
                                    output=True)
             
             for data in generator:
+                print generator.exponent
                 while not self._stop:
                     stream.write(data.tostring())
                 break
@@ -110,33 +111,7 @@ def play(generator):
         pa.terminate()
         print('Audio terminated correctly')
 
-def renderAndPlay(generator, duration):
-    """
-    Mainly for debug. It generates a rendering and play it as a single long
-    array.
-
-    Args:
-        generator (derived class of ``SampleGenerator``): the generator to be
-            played.
-        time (float): the duration of the rendering, in seconds.
-    """
-    start = time.time()
-    output = numpy.zero(dtype=numpy.float32)
-    stop = False
-    while not stop:
-        output = numpy.concatenate(output, generator.next())
-        if time.time() - start > duration:
-            stop = True
-
-    pa = pyaudio.PyAudio()
-    stream = pa.open(format=pyaudio.paFloat32,
-                     channels=1,
-                     rate=BITRATE,
-                     output=True)
-
-    stream.write(data.tostring())
-
-def parseCommandLine():
+def parse_command_line():
     """
     Get the input parser.
 

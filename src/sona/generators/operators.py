@@ -16,19 +16,23 @@ class Product(SampleGenerator):
         Args:
             first (a SampleGenerator): generator providing first chunk.
             second (a SampleGenerator): generator providing second chunk.
+
+        Attributes:
+            first (a SampleGenerator): the generator providing first chunk.
+            second (a SampleGenerator): the generator providing second chunk.            
         """
         if first.chunkSize() != second.chunkSize():
             raise ValueError("Generator in product must have the same chunk size.")
         super(Product, self).__init__(chunk_size=first.chunkSize(), amplitude=amplitude)
-        self._first = first
-        self._second = second
+        self.first = first
+        self.second = second
 
     def next(self):
         """
         Generate the product chunks.
         """
-        first_chunk = self._first.next()
-        second_chunk = self._second.next()
+        first_chunk = self.first.next()
+        second_chunk = self.second.next()
         self._chunk = numpy.multiply(first_chunk, second_chunk)
         self.normalize()
         return self._chunk
