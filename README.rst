@@ -1,20 +1,52 @@
 SONA
 =====
 
-sona is a small utility to code and play sound generators in python. The purpose is to have some
-indefinite sound/noise generators, using pyAudio as audio backend. Up to now only a colored noise 
-generator is supported.
+sona is a small code I wrote for fun to play noise generators in python. 
+The idea is to have indefinite sound/noise generator which can be modified in real time using pyAudio as audio backend. 
 
-Usage example
+The generators can be played directly or they can through a threaded player. 
+In this way we are able to change the attributes of the generator from the python console and modify the noise in real time.
+
+Command line usage
 --------------
 
 For the available arguments:
 
-$ sona --help
+.. code-block::
+	
+	$ sona --help
 
 To generate a brown noise (default exponent 2.0);
 
-$ sona colored_noise
+.. code-block::
+
+	$ sona colored_noise
+
+Interactive usage
+--------------
+
+You can play a generator directly from console. For example, to play a pulse generator:
+
+.. code-block::
+
+	>>> import sona
+	>>> g = sona.PulseGenerator()  # The generator
+	>>> player = sona.Player()     # The threaded player
+	>>> player(g)
+
+Now the generator is playing. You can interact with it changing its attributes.
+For example:
+
+.. code-block::
+
+	>>> g.distance /= 2.0  # More frequent pulses
+
+Stop the player:
+
+.. code-block::
+
+	>>> player.stop()
+
 
 License
 --------
