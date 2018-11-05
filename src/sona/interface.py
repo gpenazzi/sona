@@ -10,14 +10,14 @@ import sys
 import threading
 import time
 
-from sona.generators.noise import ColoredNoise
-from sona.generators.noise import PulseGenerator
-from sona.params import BUFFERSIZE, BITRATE
+from .generators.noise import ColoredNoise
+from .generators.noise import PulseGenerator
+from .params import BUFFERSIZE, BITRATE
 
 @contextlib.contextmanager
 def ignore_stderr():
     """
-    A context manager to ignore stderr. We use it to avoid PyAudio 
+    A context manager to ignore stderr. We use it to avoid PyAudio
     pulluting the console output.
     Credits to:
     https://stackoverflow.com/questions/36956083/how-can-the-terminal-output-of-executables-run-by-python-functions-be-silenced-i/36966379#36966379
@@ -42,7 +42,7 @@ class Player():
         The player constructor.
         """
         self._stop = False
-    
+
     def __call__(self, generator):
         """
         The player call function.
@@ -61,7 +61,7 @@ class Player():
 
         Args:
            generator (SampleGenerator): the generator to be played.
-           lock (threading.Lock): a thread lock. 
+           lock (threading.Lock): a thread lock.
         """
         with lock:
             pa = pyaudio.PyAudio()
@@ -69,7 +69,7 @@ class Player():
                                    channels=1,
                                    rate=BITRATE,
                                    output=True)
-            
+
             for data in generator:
                 if not self._stop:
                     stream.write(data.tostring())

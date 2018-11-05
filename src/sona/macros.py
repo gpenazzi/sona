@@ -1,7 +1,7 @@
 """
 A module with examples which combine more generators together.
 """
-from sona import *
+from . import *
 import scipy.signal as signal
 
 
