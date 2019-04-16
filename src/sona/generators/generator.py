@@ -44,7 +44,7 @@ class SampleGenerator(object):
         self._chunk = (self._amplitude *
             (self._chunk / max(numpy.abs(self._chunk)))).astype(numpy.float32)
 
-    def next(self):
+    def __next__(self):
         raise NotImplementedError("next() is a virtual method")
 
     def chunkSize(self):

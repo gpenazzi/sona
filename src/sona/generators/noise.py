@@ -33,12 +33,12 @@ class NoiseGenerator(SampleGenerator):
         self._spectrum_filter = spectrum_filter
         self.high_pass = high_pass
 
-    def next(self):
+    def __next__(self):
         """
         Generate the signal chunks.
         """
-        spectrum = numpy.random.randn((self._chunk_size + 2) / 2) + \
-            1j * numpy.random.randn((self._chunk_size + 2) / 2)
+        spectrum = numpy.random.randn((self._chunk_size + 2) // 2) + \
+            1j * numpy.random.randn((self._chunk_size + 2) // 2)
         # A punk high-pass Filter
         spectrum[:self.high_pass] = 0
         frequency = numpy.arange(len(spectrum), dtype=numpy.float32)
@@ -52,9 +52,9 @@ class NoiseGenerator(SampleGenerator):
 
 class ColoredNoise(NoiseGenerator):
     """A colored noise with a spectrum 1/f**e."""
-    def __init__(self, 
-                 exponent, 
-                 high_pass, 
+    def __init__(self,
+                 exponent,
+                 high_pass,
                  chunk_size=BUFFERSIZE):
         """
         Build a colored noise generator with a spectrum 1/f**e
@@ -77,7 +77,7 @@ class ColoredNoise(NoiseGenerator):
     @property
     def exponent(self):
         return self._exponent
-    
+
     @exponent.setter
     def exponent(self, value):
         self._exponent = value
@@ -126,7 +126,7 @@ class PulseGenerator(SampleGenerator):
     @property
     def distance(self):
         return self._distance
-    
+
     @distance.setter
     def distance(self, value):
         self._distance = value
@@ -135,13 +135,13 @@ class PulseGenerator(SampleGenerator):
     @property
     def randomness(self):
         return self._randomness
-    
+
     @randomness.setter
     def randomness(self, value):
         self._randomness = value
         self._random_range = int((self._randomness * numpy.sqrt(12) * 1e-3) * self._bitrate)
 
-    def next(self):
+    def __next__(self):
         """
         Generate the signal chunks.
         """
