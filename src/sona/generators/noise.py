@@ -113,14 +113,13 @@ class PulseGenerator(SampleGenerator):
         self._average_integer_distance = int((self._distance * 1e-3) * bitrate)
 
         self._randomness = randomness
-        self._random_range = int((self._randomness * numpy.sqrt(12) * 1e-3) * bitrate)
+        self._random_range = int(
+            (self._randomness * numpy.sqrt(12) * 1e-3) * bitrate)
 
         # An absolute frame time
-        self._clock = 0
-        self._last_pulse_clock = 0
         self._random_generator_state = numpy.random.RandomState()
-        self._bitrate = bitrate
         self.pulse_signal = pulse_signal
+        self._pulse_signal_buffer = self.pulse_signal[:]
 
 
     @property
@@ -130,7 +129,8 @@ class PulseGenerator(SampleGenerator):
     @distance.setter
     def distance(self, value):
         self._distance = value
-        self._average_integer_distance = int((self._distance * 1e-3) * self._bitrate)
+        self._average_integer_distance = int(
+            (self._distance * 1e-3) * self._bitrate)
 
     @property
     def randomness(self):
@@ -139,31 +139,52 @@ class PulseGenerator(SampleGenerator):
     @randomness.setter
     def randomness(self, value):
         self._randomness = value
-        self._random_range = int((self._randomness * numpy.sqrt(12) * 1e-3) * self._bitrate)
+        self._random_range = int(
+            (self._randomness * numpy.sqrt(12) * 1e-3) * self._bitrate)
+
+    def _determineNextSampleDistance(self):
+        """ Determine the integer distance to next sample. """
+        if self._random_range > 0.0:
+            random_component = self._random_generator_state.randint(
+                0, self._random_range)
+            self._random_generator_state.seed()
+        else:
+            random_component = 0
+        return self._average_integer_distance + random_component
+
+    def _getSignalBufferSamples(self, n):
+        """
+        Retrieve n samples from the signal buffer.
+        If it depletes, regenerate it.
+        """
+        if n < self._pulse_signal_buffer.size:
+            samples, self._pulse_signal_buffer = numpy.split(
+                self._pulse_signal_buffer, [n])
+
+            return samples
+        else:
+            # Take the leftover.
+            leftover = self._pulse_signal_buffer[:]
+            self._pulse_signal_buffer = numpy.zeros(0)
+
+            # Regenerate the buffer.
+            while self._pulse_signal_buffer.size < n:
+                self._pulse_signal_buffer = numpy.concatenate(
+                        [self._pulse_signal_buffer,
+                         self.pulse_signal,
+                         numpy.zeros(self._determineNextSampleDistance())])
+
+            samples = numpy.concatenate(
+                [leftover, self._pulse_signal_buffer[:n-leftover.size]])
+            self._pulse_signal_buffer = self._pulse_signal_buffer[n-leftover.size:]
+            return samples
 
     def __next__(self):
         """
         Generate the signal chunks.
         """
         self._reset()
-        depleted = False
-        while not depleted:
-            if self._random_range > 0.0:
-                random_component = self._random_generator_state.randint(
-                    -self._random_range, self._random_range)
-                self._random_generator_state.seed()
-            else:
-                random_component = 0
-            pulse_clock = self._last_pulse_clock + self._average_integer_distance + random_component
-            if pulse_clock < self._clock:
-                pulse_clock = self._clock
-            if pulse_clock + self.pulse_signal.size > self._clock + self._chunk_size:
-                depleted = True
-            else:
-                self._last_pulse_clock = pulse_clock
-                start = pulse_clock-self._clock
-                self._chunk[start:start+self.pulse_signal.size] = self.pulse_signal
-        self._clock += self._chunk_size + 1
-
-        self.normalize()
+        self._chunk = self._getSignalBufferSamples(self._chunk_size)
+        if numpy.count_nonzero(self._chunk) > 0:
+            self.normalize()
         return self._chunk
