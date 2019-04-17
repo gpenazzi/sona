@@ -8,27 +8,20 @@ from sona.params import BUFFERSIZE, BITRATE
 class SampleGenerator(object):
 
     def __init__(self,
-                 chunk_size=BUFFERSIZE,
-                 bitrate=BITRATE,
                  amplitude=1.0):
         """
         Base class for sound generators.
 
         Args:
-            chunk_size (int):
-                The size of the chunk returned by next().
-                It has to be an even number.
-            bitrate (int): The bit rate per second.
             amplitude (float): the amplitude to which the samples are to be renormalized.
         """
         self._amplitude = amplitude
-        self._bitrate = bitrate
-        if chunk_size % 2 == 0:
-            self._chunk_size = chunk_size
+        self._bitrate = BITRATE
+        if BUFFERSIZE % 2 == 0:
+            self._chunk_size = BUFFERSIZE
         else:
-            raise ValueError("chunk_size has to be even.")
+            raise ValueError("BUFFERSIZE has to be even.")
         self._chunk = numpy.zeros(self._chunk_size, dtype=numpy.float32)
-
 
     def _reset(self):
         self._chunk[:] = 0.0

@@ -98,20 +98,31 @@ def play(generator):
         generator (derived class of ``SampleGenerator``): the generator to be
             played.
     """
+    def callback(in_data, frame_count, time_info, status):
+        data = next(generator)
+        return (data, pyaudio.paContinue)
+
+    # open stream using callback (3)
     pa = pyaudio.PyAudio()
     stream = pa.open(format=pyaudio.paFloat32,
                      channels=1,
                      rate=BITRATE,
-                     output=True)
+                     frames_per_buffer=BUFFERSIZE,
+                     output=True,
+                     stream_callback=callback)
 
     try:
-        for data in generator:
-            stream.write(data.tostring())
+        stream.start_stream()
+
+        # wait for stream to finish (5)
+        while stream.is_active():
+            time.sleep(1.0)
     except KeyboardInterrupt:
         stream.stop_stream()
         stream.close()
         pa.terminate()
         print('Audio terminated correctly')
+
 
 def parse_command_line():
     """

@@ -3,17 +3,17 @@ Colored Noise generators module.
 """
 import numpy
 from scipy.signal import gaussian
-
-from sona.params import BUFFERSIZE, BITRATE
 from sona.generators.generator import SampleGenerator
+
+import time
 
 
 class NoiseGenerator(SampleGenerator):
-    """ A noise generator """
+    """A noise generator."""
+
     def __init__(self,
                  spectrum_filter=lambda x, f: x,
                  high_pass=128,
-                 chunk_size=BUFFERSIZE,
                  amplitude=1.0):
         """
         A generic noise generator. The class will create a random spectrum and process it with
@@ -26,10 +26,9 @@ class NoiseGenerator(SampleGenerator):
             high_pass (integer): set the first high_pass_zeroed_samples spectrum
                 components to zero. This implements a rudimental high pass filter and avoids
                 divergence of the samples.
-            chunk_size (even int): the size of the chunks returned by the iterator.
             amplitude (float): signal amplitude.
         """
-        super(NoiseGenerator, self).__init__(chunk_size=chunk_size, amplitude=amplitude)
+        super(NoiseGenerator, self).__init__(amplitude=amplitude)
         self._spectrum_filter = spectrum_filter
         self.high_pass = high_pass
 
@@ -54,8 +53,7 @@ class ColoredNoise(NoiseGenerator):
     """A colored noise with a spectrum 1/f**e."""
     def __init__(self,
                  exponent,
-                 high_pass,
-                 chunk_size=BUFFERSIZE):
+                 high_pass,):
         """
         Build a colored noise generator with a spectrum 1/f**e
 
@@ -63,7 +61,6 @@ class ColoredNoise(NoiseGenerator):
             exponent (float): the exponent of the frequency.
             high_pass (int): the number of samples to be zeroed in the high pass
                 filter.
-            chunk_size (even int): the size of the chunks returned by the iterator.
 
         Returns:
             An instance of ``NoiseGenerator``.
@@ -71,8 +68,7 @@ class ColoredNoise(NoiseGenerator):
         self._exponent = exponent
         super(ColoredNoise, self).__init__(
             spectrum_filter=lambda x, f: x / f**self._exponent,
-            high_pass=high_pass,
-            chunk_size=chunk_size)
+            high_pass=high_pass,)
 
     @property
     def exponent(self):
@@ -83,13 +79,12 @@ class ColoredNoise(NoiseGenerator):
         self._exponent = value
         self._spectrum_filter = lambda x, f: x / f**self._exponent
 
+
 class PulseGenerator(SampleGenerator):
     """ A pulsed audio noise generator """
     def __init__(self,
-                 bitrate=BITRATE,
                  distance=100.0,
                  randomness=5.0,
-                 chunk_size=BUFFERSIZE,
                  pulse_signal=gaussian(361, 18),
                  amplitude=1.0):
         """
@@ -97,24 +92,20 @@ class PulseGenerator(SampleGenerator):
         input parameters.
 
         Args:
-            bitrate (int): the bitrate.
             distance (float): the average distance in ms between different pulses.
             randomness (float): the width of the uniform distribution to modify randomly
                 the distance between pulses. A uniform distribution is used, with
                 b - a = sqrt(12) * standard_deviation
-            chunk_size (even int): the size of the chunks returned by the iterator.
             pulse_signal (array): the shape of the pulse.
             amplitude (float): signal amplitude.
         """
-        super(PulseGenerator, self).__init__(chunk_size=chunk_size,
-                                             amplitude=amplitude,
-                                             bitrate=bitrate)
+        super(PulseGenerator, self).__init__(amplitude=amplitude)
         self._distance = distance
-        self._average_integer_distance = int((self._distance * 1e-3) * bitrate)
+        self._average_integer_distance = int((self._distance * 1e-3) * self._bitrate)
 
         self._randomness = randomness
         self._random_range = int(
-            (self._randomness * numpy.sqrt(12) * 1e-3) * bitrate)
+            (self._randomness * numpy.sqrt(12) * 1e-3) * self._bitrate)
 
         # An absolute frame time
         self._random_generator_state = numpy.random.RandomState()
@@ -158,11 +149,12 @@ class PulseGenerator(SampleGenerator):
         If it depletes, regenerate it.
         """
         if n < self._pulse_signal_buffer.size:
+            start = time.time()
             samples, self._pulse_signal_buffer = numpy.split(
                 self._pulse_signal_buffer, [n])
-
             return samples
         else:
+            start = time.time()
             # Take the leftover.
             leftover = self._pulse_signal_buffer[:]
             self._pulse_signal_buffer = numpy.zeros(0)
