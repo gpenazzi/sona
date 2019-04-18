@@ -3,16 +3,19 @@ pyAudio-sona interface and command line user interface.
 """
 import argparse
 import contextlib
-import numpy
 import os
 import pyaudio
 import sys
 import threading
 import time
+import scipy.signal as signal
 
 from .generators.noise import ColoredNoise
 from .generators.noise import PulseGenerator
+from .generators.noise import SineOscillator
 from .params import BUFFERSIZE, BITRATE
+from .macros import coloredGatedNoise
+from .macros import gatedSine
 
 @contextlib.contextmanager
 def ignore_stderr():
@@ -133,8 +136,11 @@ def parse_command_line():
     """
     parser = argparse.ArgumentParser()
     helpstring = """
-        The generator to be used. Up to now sona supports colored_noise and
-        pulse_noise
+        The generator to be used. Up to now sona supports:
+          - colored_noise
+          - pulse_noise
+          - gated_pulse
+          - gated_sine
         """
     parser.add_argument("generator",
                         type=str,
@@ -169,7 +175,23 @@ def parse_command_line():
                         type=float,
                         default=20.0,
                         help=helpstring)
-    args = parser.parse_args()
+
+    helpstring = """
+        The gating width in ms.
+        """
+    parser.add_argument("--gate-width",
+                        type=float,
+                        default=10.0,
+                        help=helpstring)
+
+    helpstring = """
+        The oscillator frequency.
+        """
+    parser.add_argument("--frequency",
+                        type=float,
+                        default=440.0,
+                        help=helpstring)
+
     return parser
 
 def start(parser):
@@ -186,6 +208,24 @@ def start(parser):
         generator = PulseGenerator(
             distance=args.distance,
             randomness=args.randomness)
+    elif args.generator == 'gated_noise':
+        int_width = int(BITRATE / 1000 * args.gate_width)
+        generator = coloredGatedNoise(
+            colored_noise_exponent=args.exponent,
+            colored_noise_high_pass=args.highpass,
+            gate_distance=args.distance,
+            gate_randomness=args.randomness,
+            gate_signal=signal.gaussian(int_width * 16, int_width))
+    elif args.generator == 'sine':
+        generator = SineOscillator(
+            frequency=args.frequency)
+    elif args.generator == 'gated_sine':
+        int_width = int(BITRATE * args.gate_width / 1000)
+        generator = gatedSine(
+            frequency=args.frequency,
+            gate_distance=args.distance,
+            gate_randomness=args.randomness,
+            gate_signal=signal.gaussian(int_width * 20, int_width))
     else:
         raise ValueError("unknown generator")
 

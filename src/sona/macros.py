@@ -1,16 +1,17 @@
 """
 A module with examples which combine more generators together.
 """
-from . import *
+from .generators.noise import ColoredNoise, PulseGenerator, SineOscillator
+from .generators.operators import Product
 import scipy.signal as signal
 
 
 def coloredGatedNoise(
         colored_noise_exponent=2.0,
         colored_noise_high_pass=128,
-        pulse_noise_distance=50.0,
-        pulse_noise_randomness=0.0,
-        pulse_noise_signal=signal.gaussian(3610, 180)):
+        gate_distance=50.0,
+        gate_randomness=0.0,
+        gate_signal=signal.gaussian(3610, 180)):
     """
     Gate a colored noise with a pulsed gaussian.
     """
@@ -18,10 +19,26 @@ def coloredGatedNoise(
         exponent=colored_noise_exponent,
         high_pass=colored_noise_high_pass)
     pulsed_noise = PulseGenerator(
-        distance=pulse_noise_distance,
-        randomness=pulse_noise_randomness,
-        pulse_signal=pulse_noise_signal)
+        distance=gate_distance,
+        randomness=gate_randomness,
+        pulse_signal=gate_signal)
     product = Product(colored_noise, pulsed_noise)
     return product
 
-ColoredGatedNoise = coloredGatedNoise()
+
+def gatedSine(
+        frequency=440.0,
+        gate_distance=50.0,
+        gate_randomness=0.0,
+        gate_signal=signal.gaussian(3610, 180)):
+    """
+    Gate a colored noise with a pulsed gaussian.
+    """
+    sine_oscillator = SineOscillator(
+        frequency=frequency)
+    pulsed_noise = PulseGenerator(
+        distance=gate_distance,
+        randomness=gate_randomness,
+        pulse_signal=gate_signal)
+    product = Product(sine_oscillator, pulsed_noise)
+    return product
