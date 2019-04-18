@@ -25,12 +25,11 @@ class Product(SampleGenerator):
         self.first = first
         self.second = second
 
-    def next(self):
+    def __next__(self):
         """
         Generate the product chunks.
         """
-        first_chunk = self.first.next()
-        second_chunk = self.second.next()
+        first_chunk = next(self.first)
+        second_chunk = next(self.second)
         self._chunk = numpy.multiply(first_chunk, second_chunk)
-        self.normalize()
         return self._chunk
