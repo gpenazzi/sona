@@ -194,7 +194,8 @@ class SineOscillator(SampleGenerator):
         self.frequency = frequency
         # omega = 2*pi*f*T
         self._discrete_frequency = 2.0 * numpy.pi * frequency / self._bitrate
-        self._time_axis = numpy.arange(self._chunk_size).astype(numpy.int64)
+        self._time_axis = numpy.arange(self._chunk_size)
+        self._sweep_counter = 0
 
     def __next__(self):
         """
@@ -202,5 +203,6 @@ class SineOscillator(SampleGenerator):
         """
         self._chunk = numpy.sin(self._discrete_frequency * self._time_axis)
         # Time should cumulate to avoid phase issues.
-        self._time_axis += self._time_axis[-1] + 1
+        self._time_axis = self._time_axis + self._sweep_counter * self._chunk_size
+        self._sweep_counter += 1
         return self._chunk.astype(numpy.float32)
