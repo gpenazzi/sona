@@ -32,12 +32,12 @@ class SampleGenerator(object):
     def __len__(self):
         return 1
 
-    def normalize(self):
+    def normalize(self, chunk):
         # Restore minimum to zero, if it is not.
-        self._chunk = self._chunk - min(self._chunk)
+        chunk = chunk - min(chunk)
         # Normalize to [0,1]
-        self._chunk = (self._amplitude *
-            (self._chunk / max(numpy.abs(self._chunk)))).astype(numpy.float32)
+        return (self._amplitude *
+            (chunk / max(numpy.abs(chunk))))
 
     def __next__(self):
         raise NotImplementedError("next() is a virtual method")

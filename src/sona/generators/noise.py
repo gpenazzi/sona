@@ -45,8 +45,8 @@ class NoiseGenerator(SampleGenerator):
         frequency[0] += 0.01
 
         self._chunk = numpy.fft.irfft(self._spectrum_filter(spectrum, frequency))
-        self.normalize()
-        return self._chunk
+
+        return self.normalize(self._chunk).astype(numpy.float32)
 
 
 class ColoredNoise(NoiseGenerator):
@@ -109,7 +109,7 @@ class PulseGenerator(SampleGenerator):
 
         # An absolute frame time
         self._random_generator_state = numpy.random.RandomState()
-        self.pulse_signal = pulse_signal
+        self.pulse_signal = self.normalize(pulse_signal)
         self._pulse_signal_buffer = self.pulse_signal[:]
 
     @property
@@ -175,9 +175,7 @@ class PulseGenerator(SampleGenerator):
         Generate the signal chunks.
         """
         self._chunk = self._getSignalBufferSamples(self._chunk_size)
-        if numpy.count_nonzero(self._chunk) > 0:
-            self.normalize()
-        return self._chunk
+        return self._chunk.astype(numpy.float32)
 
 
 class SineOscillator(SampleGenerator):
