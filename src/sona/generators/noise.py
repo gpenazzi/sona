@@ -181,7 +181,7 @@ class PulseGenerator(SampleGenerator):
 class SineOscillator(SampleGenerator):
     """ A simple sine generator """
     def __init__(self,
-                 frequency=4000.0,
+                 frequency=440.0,
                  amplitude=1.0):
         """
         A sine oscillator.
@@ -201,8 +201,8 @@ class SineOscillator(SampleGenerator):
         """
         Generate the signal chunks.
         """
-        self._chunk = numpy.sin(self._discrete_frequency * self._time_axis)
-        # Time should cumulate to avoid phase issues.
-        self._time_axis = self._time_axis + self._sweep_counter * self._chunk_size
+        # Time axis takes into account phase from previous chunks.
+        time_axis = self._time_axis + self._sweep_counter * self._chunk_size
+        self._chunk = numpy.sin(self._discrete_frequency * time_axis)
         self._sweep_counter += 1
         return self._chunk.astype(numpy.float32)

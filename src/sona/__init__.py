@@ -1,6 +1,7 @@
 # SONA imports
 from .generators.noise import PulseGenerator
 from .generators.noise import NoiseGenerator
+from .generators.noise import SineOscillator
 from .generators.noise import ColoredNoise
 from .generators.operators import Product
 from .interface import play
