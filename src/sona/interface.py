@@ -36,61 +36,58 @@ def ignore_stderr():
         os.dup2(old_stderr, 2)
         os.close(old_stderr)
 
+
 class Player():
     """
-    A threaded player class.
+    A non-blocking player class.
+
+    Usage:
+        >>> player = Player(generator)
+        # This starts the generator
+        >>> player.start()
+        # This stops the generator
+        >>> player.stop()
     """
-    def __init__(self):
+    def __init__(self, generator):
         """
         The player constructor.
         """
         self._stop = False
+        self._generator = generator
 
-    def __call__(self, generator):
+    def start(self):
         """
-        The player call function.
+        Play the generator.
 
         Args:
             generator (SampleGenerator): the generator to be played.
         """
-        lock = threading.Lock()
-        self.thread = threading.Thread(target=self._play, args=(generator, lock))
-        with ignore_stderr():
-            self.thread.start()
+        def callback(in_data, frame_count, time_info, status):
+            data = next(self._generator)
+            return (data, pyaudio.paContinue)
 
-    def _play(self, generator, lock):
-        """
-        The meaty play function.
-
-        Args:
-           generator (SampleGenerator): the generator to be played.
-           lock (threading.Lock): a thread lock.
-        """
-        with lock:
-            pa = pyaudio.PyAudio()
-            stream = pa.open(format=pyaudio.paFloat32,
-                                   channels=1,
-                                   rate=BITRATE,
-                                   output=True)
-
-            for data in generator:
-                if not self._stop:
-                    stream.write(data.tostring())
-                else:
-                    break
-            # Close the stream and terminate pyAudio.
-            stream.stop_stream()
-            stream.close()
-            pa.terminate()
-            print('Audio terminated correctly')
-            # Allow re-play.
-            self._stop = False
+        # open stream using callback (3)
+        self._pa = pyaudio.PyAudio()
+        self._stream = self._pa.open(
+            format=pyaudio.paFloat32,
+            channels=1,
+            rate=BITRATE,
+            frames_per_buffer=BUFFERSIZE,
+            output=True,
+            stream_callback=callback)
+        self._stream.start_stream()
 
     def stop(self):
         """
         Stop the playback.
         """
-        self._stop = True
+        # Close the stream and terminate pyAudio.
+        if self._stream:
+            self._stream.stop_stream()
+            self._stream.close()
+        if self._pa:
+            self._pa.terminate()
+        print('Audio terminated correctly')
 
 
 def play(generator):
@@ -101,30 +98,14 @@ def play(generator):
         generator (derived class of ``SampleGenerator``): the generator to be
             played.
     """
-    def callback(in_data, frame_count, time_info, status):
-        data = next(generator)
-        return (data, pyaudio.paContinue)
-
-    # open stream using callback (3)
-    pa = pyaudio.PyAudio()
-    stream = pa.open(format=pyaudio.paFloat32,
-                     channels=1,
-                     rate=BITRATE,
-                     frames_per_buffer=BUFFERSIZE,
-                     output=True,
-                     stream_callback=callback)
-
+    player = Player(generator)
     try:
-        stream.start_stream()
-
-        # wait for stream to finish (5)
-        while stream.is_active():
+        player.start()
+        # Event loop to keep playing.
+        while True:
             time.sleep(1.0)
     except KeyboardInterrupt:
-        stream.stop_stream()
-        stream.close()
-        pa.terminate()
-        print('Audio terminated correctly')
+        player.stop()
 
 
 def parse_command_line():
@@ -193,6 +174,7 @@ def parse_command_line():
                         help=helpstring)
 
     return parser
+
 
 def start(parser):
     """
