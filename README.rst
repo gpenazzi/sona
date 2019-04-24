@@ -1,10 +1,10 @@
 SONA
 =====
 
-sona is a small code I wrote for fun to play noise generators in python. 
-The idea is to have indefinite sound/noise generator which can be modified in real time using pyAudio as audio backend. 
+sona is a small code I wrote for fun to play noise generators in python.
+The idea is to have indefinite sound/noise generator which can be modified in real time using pyAudio as audio backend.
 
-The generators can be played directly or they can through a threaded player. 
+The generators can be played directly or they can through a threaded player.
 In this way we are able to change the attributes of the generator from the python console and modify the noise in real time.
 
 Command line usage
@@ -13,7 +13,7 @@ Command line usage
 For the available arguments:
 
 .. code-block::
-	
+
 	$ sona --help
 
 To generate a brown noise (default exponent 2.0);
@@ -31,8 +31,8 @@ You can play a generator directly from console. For example, to play a pulse gen
 
 	>>> import sona
 	>>> g = sona.PulseGenerator()  # The generator
-	>>> player = sona.Player()     # The threaded player
-	>>> player(g)
+	>>> player = sona.Player(g)    # The player
+	>>> player.start()
 
 Now the generator is playing. You can interact with it changing its attributes.
 For example:
